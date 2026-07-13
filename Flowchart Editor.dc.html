@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    @keyframes fadeIn { from { opacity:0 } to { opacity:1 } }
+    @keyframes modalIn { from { opacity:0; transform:translateY(8px) scale(0.98) } to { opacity:1; transform:translateY(0) scale(1) } }
+    body { margin:0; }
+    ::selection { background:rgba(79,140,255,0.35); }
+    textarea::placeholder { color:#4b5877; }
+  </style>
+</helmet>
+<div style="{{ rootVarsStyle }}height:100vh;width:100vw;display:flex;flex-direction:column;overflow:hidden;background:var(--bg);font-family:'Inter',system-ui,-apple-system,sans-serif;color:var(--text)" data-screen-label="Editor">
+
+  <!-- Top navigation -->
+  <header style="min-height:64px;flex-shrink:0;display:flex;flex-wrap:wrap;align-items:center;gap:var(--header-gap);row-gap:8px;padding:var(--header-pad);background:var(--header-bg);border-bottom:1px solid var(--border)">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#4F8CFF,#8B5CF6);flex-shrink:0"></div>
+      <div style="display:flex;flex-direction:column;line-height:1.25">
+        <span style="font-size:15px;font-weight:600;color:var(--text);letter-spacing:0.01em">Flowchart Studio</span>
+      </div>
+    </div>
+
+    <div style="flex:1"></div>
+
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="font-size:11px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.06em;margin-right:2px">Contoh</span>
+      <button onClick="{{ loadPreparasi }}" style="font-family:inherit;font-size:12.5px;font-weight:500;color:var(--text-secondary-strong);background:transparent;border:1px solid var(--border-soft);border-radius:8px;padding:6px 12px;cursor:pointer;transition:all .15s ease-out" style-hover="background:var(--hover-bg);border-color:var(--hover-border)">Preparasi</button>
+      <button onClick="{{ loadKalibrasi }}" style="font-family:inherit;font-size:12.5px;font-weight:500;color:var(--text-secondary-strong);background:transparent;border:1px solid var(--border-soft);border-radius:8px;padding:6px 12px;cursor:pointer;transition:all .15s ease-out" style-hover="background:var(--hover-bg);border-color:var(--hover-border)">Kalibrasi</button>
+      <button onClick="{{ loadKondisi }}" style="font-family:inherit;font-size:12.5px;font-weight:500;color:var(--text-secondary-strong);background:transparent;border:1px solid var(--border-soft);border-radius:8px;padding:6px 12px;cursor:pointer;transition:all .15s ease-out" style-hover="background:var(--hover-bg);border-color:var(--hover-border)">Uji Kondisi</button>
+    </div>
+
+    <div style="width:1px;height:24px;background:var(--border)"></div>
+
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="font-size:11px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.06em;margin-right:2px">Font</span>
+      <select value="{{ font }}" onChange="{{ onFontChange }}" style="font-family:inherit;font-size:12.5px;color:var(--text);background:var(--input-bg);border:1px solid var(--border-soft);border-radius:8px;padding:7px 10px;cursor:pointer;outline:none">
+        <option value="Arial, Helvetica, sans-serif">Arial</option>
+        <option value="'Times New Roman', Times, serif">Times New Roman</option>
+        <option value="Calibri, 'Segoe UI', sans-serif">Calibri</option>
+      </select>
+    </div>
+
+    <div style="width:1px;height:24px;background:var(--border)"></div>
+
+    <button title="Ganti tema terang/gelap" onClick="{{ toggleTheme }}" style="width:34px;height:32px;padding:0;display:flex;align-items:center;justify-content:center;font-size:15px;color:var(--text-secondary-strong);background:transparent;border:1px solid var(--border-soft);border-radius:8px;cursor:pointer;transition:all .15s ease-out" style-hover="background:var(--hover-bg);border-color:var(--hover-border)">{{ themeIcon }}</button>
+
+    <div style="width:1px;height:24px;background:var(--border)"></div>
+
+    <div style="display:flex;align-items:center;gap:8px">
+      <button onClick="{{ openHelp }}" style="font-family:inherit;font-size:12.5px;font-weight:500;color:var(--text-secondary-strong);background:transparent;border:1px solid var(--border-soft);border-radius:8px;padding:7px 12px;cursor:pointer;transition:all .15s ease-out" style-hover="background:var(--hover-bg);border-color:var(--hover-border)">Panduan</button>
+      <button onClick="{{ exportSVGClick }}" style="font-family:inherit;font-size:12.5px;font-weight:500;color:var(--text-secondary-strong);background:transparent;border:1px solid var(--border-soft);border-radius:8px;padding:7px 12px;cursor:pointer;transition:all .15s ease-out" style-hover="background:var(--hover-bg);border-color:var(--hover-border)">Ekspor SVG</button>
+      <select value="{{ pngQuality }}" onChange="{{ onPngQualityChange }}" title="Kualitas ekspor PNG" style="font-family:inherit;font-size:12px;font-weight:500;color:var(--text-secondary-strong);background:var(--input-bg);border:1px solid var(--border-soft);border-radius:8px;padding:7px 8px;cursor:pointer;outline:none">
+        <option value="normal">Normal</option>
+        <option value="hd">HD</option>
+      </select>
+      <button onClick="{{ exportPNGClick }}" style="font-family:inherit;font-size:12.5px;font-weight:600;color:#fff;background:var(--accent);border:1px solid var(--accent);border-radius:8px;padding:7px 14px;cursor:pointer;transition:all .15s ease-out;box-shadow:0 1px 2px var(--accent-shadow)" style-hover="background:var(--accent-hover);border-color:var(--accent-hover)">Ekspor PNG</button>
+    </div>
+  </header>
+
+  <!-- Main body -->
+  <main style="flex:1;display:flex;min-height:0">
+
+    <!-- Editor pane -->
+    <section style="width:min(42%,480px);min-width:320px;display:flex;flex-direction:column;background:var(--panel-bg);border-right:1px solid var(--border)">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:var(--panel-pad);border-bottom:1px solid var(--border)">
+        <span style="font-size:11px;font-weight:600;color:var(--text-secondary);letter-spacing:0.06em;text-transform:uppercase">Editor Teks</span>
+        <span style="font-size:11px;color:var(--text-tertiary);font-variant-numeric:tabular-nums">{{ stat }}</span>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:4px;padding:var(--toolbar-pad);border-bottom:1px solid var(--border);background:var(--canvas-bg)">
+        <button title="Tebal — **teks**" onClick="{{ boldWrap }}" style="width:32px;height:28px;padding:0;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;color:var(--text-secondary-strong);background:transparent;border:1px solid transparent;border-radius:6px;cursor:pointer;transition:all .15s ease-out" style-hover="background:var(--hover-bg-strong);border-color:var(--border-soft)">B</button>
+        <button title="Miring — *teks*" onClick="{{ italicWrap }}" style="width:32px;height:28px;padding:0;font-size:13px;font-style:italic;display:flex;align-items:center;justify-content:center;color:var(--text-secondary-strong);background:transparent;border:1px solid transparent;border-radius:6px;cursor:pointer;transition:all .15s ease-out" style-hover="background:var(--hover-bg-strong);border-color:var(--border-soft)">I</button>
+        <button title="Garis bawah — __teks__" onClick="{{ underlineWrap }}" style="width:32px;height:28px;padding:0;font-size:13px;text-decoration:underline;display:flex;align-items:center;justify-content:center;color:var(--text-secondary-strong);background:transparent;border:1px solid transparent;border-radius:6px;cursor:pointer;transition:all .15s ease-out" style-hover="background:var(--hover-bg-strong);border-color:var(--border-soft)">U</button>
+        <div style="width:1px;height:18px;background:var(--border-soft);margin:0 4px"></div>
+        <button title="Subskrip — ~teks~" onClick="{{ subWrap }}" style="width:32px;height:28px;padding:0;font-size:13px;display:flex;align-items:center;justify-content:center;color:var(--text-secondary-strong);background:transparent;border:1px solid transparent;border-radius:6px;cursor:pointer;transition:all .15s ease-out" style-hover="background:var(--hover-bg-strong);border-color:var(--border-soft)">X<sub style="font-size:9px">2</sub></button>
+        <button title="Superskrip — ^teks^" onClick="{{ supWrap }}" style="width:32px;height:28px;padding:0;font-size:13px;display:flex;align-items:center;justify-content:center;color:var(--text-secondary-strong);background:transparent;border:1px solid transparent;border-radius:6px;cursor:pointer;transition:all .15s ease-out" style-hover="background:var(--hover-bg-strong);border-color:var(--border-soft)">X<sup style="font-size:9px">2</sup></button>
+      </div>
+
+      <textarea ref="{{ textareaRef }}" value="{{ src }}" onChange="{{ onSrcChange }}" onKeyDown="{{ onTextareaKeyDown }}" spellcheck="false" style="flex:1;border:0;resize:none;padding:var(--editor-pad);font-family:'SFMono-Regular',Menlo,Consolas,monospace;font-size:13px;line-height:1.6;color:var(--text);background:transparent;outline:none;tab-size:2;caret-color:var(--accent)"></textarea>
+
+      <sc-if value="{{ hasError }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:10px 16px;font-size:12.5px;color:var(--danger-text);background:var(--danger-bg);border-top:1px solid var(--danger-border);font-family:'SFMono-Regular',Menlo,Consolas,monospace;white-space:pre-wrap;line-height:1.5">{{ error }}</div>
+      </sc-if>
+    </section>
+
+    <!-- Preview / canvas pane -->
+    <section style="flex:1;position:relative;overflow:auto;background-color:var(--canvas-bg);background-image:var(--canvas-bg-image);background-size:var(--canvas-bg-size)">
+      <div style="min-width:100%;min-height:100%;display:flex;align-items:flex-start;justify-content:center;padding:var(--canvas-pad)">
+        <div ref="{{ stageRef }}"></div>
+      </div>
+
+      <div style="position:absolute;right:24px;bottom:24px;display:flex;align-items:center;gap:2px;background:var(--input-bg);border:1px solid var(--border-soft);border-radius:12px;padding:4px;box-shadow:0 8px 24px var(--shadow-color)">
+        <button onClick="{{ zoomOut }}" style="border:0;background:transparent;width:30px;height:28px;padding:0;font-size:16px;color:var(--text-secondary-strong);border-radius:8px;cursor:pointer;transition:background .15s ease-out" style-hover="background:var(--hover-bg-strong)">−</button>
+        <div style="min-width:48px;text-align:center;font-size:11.5px;color:var(--text-secondary);font-variant-numeric:tabular-nums">{{ zoomPct }}</div>
+        <button onClick="{{ zoomIn }}" style="border:0;background:transparent;width:30px;height:28px;padding:0;font-size:16px;color:var(--text-secondary-strong);border-radius:8px;cursor:pointer;transition:background .15s ease-out" style-hover="background:var(--hover-bg-strong)">+</button>
+        <div style="width:1px;height:18px;background:var(--border-soft);margin:0 2px"></div>
+        <button title="Reset zoom" onClick="{{ zoomReset }}" style="border:0;background:transparent;width:30px;height:28px;padding:0;font-size:14px;color:var(--text-secondary-strong);border-radius:8px;cursor:pointer;transition:background .15s ease-out" style-hover="background:var(--hover-bg-strong)">⤢</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- Help modal -->
+  <sc-if value="{{ helpOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ overlayClick }}" style="position:fixed;inset:0;background:var(--overlay);backdrop-filter:blur(2px);display:flex;align-items:center;justify-content:center;z-index:50;animation:fadeIn .18s ease-out">
+      <div style="background:var(--header-bg);max-width:580px;width:90%;max-height:82vh;overflow:auto;border-radius:16px;padding:28px 32px;border:1px solid var(--border);box-shadow:0 24px 64px var(--shadow-color);animation:modalIn .18s ease-out">
+        <button onClick="{{ closeHelp }}" style="float:right;border:0;background:var(--hover-bg-strong);color:var(--text-secondary-strong);border-radius:6px;padding:5px 10px;font-size:12px;cursor:pointer;font-family:inherit" style-hover="background:var(--hover-border)">tutup</button>
+
+        <h2 style="margin:0 0 4px;font-size:18px;font-weight:600;color:var(--text)">Cara menulis diagram</h2>
+        <p style="font-size:14px;color:var(--text-secondary);line-height:1.6">Diagram ditulis baris demi baris dari atas ke bawah. Ada empat jenis baris:</p>
+
+        <table style="width:100%;border-collapse:collapse;font-size:13px;margin:8px 0 16px">
+          <tr><td style="padding:6px 10px 6px 0;border-bottom:1px solid var(--border);white-space:nowrap;color:var(--accent);vertical-align:top">[Teks]</td><td style="padding:6px 0;border-bottom:1px solid var(--border);color:var(--text-secondary-strong);vertical-align:top">Sebuah <b>kotak</b> (bahan / produk / hasil). Contoh: <code style="font-family:monospace;background:var(--code-bg);padding:1px 5px;border-radius:4px;color:var(--text)">[Serbuk sampel]</code></td></tr>
+          <tr><td style="padding:6px 10px 6px 0;border-bottom:1px solid var(--border);white-space:nowrap;color:var(--accent);vertical-align:top">- Teks</td><td style="padding:6px 0;border-bottom:1px solid var(--border);color:var(--text-secondary-strong);vertical-align:top">Sebuah <b>perlakuan</b>, muncul sebagai garis kecil + teks di kanan garis alir.</td></tr>
+          <tr><td style="padding:6px 10px 6px 0;border-bottom:1px solid var(--border);white-space:nowrap;color:var(--accent);vertical-align:top">&lt; Teks</td><td style="padding:6px 0;border-bottom:1px solid var(--border);color:var(--text-secondary-strong);vertical-align:top">Sebuah <b>penambahan reagen</b> (tanda panah masuk ke garis). Contoh: <code style="font-family:monospace;background:var(--code-bg);padding:1px 5px;border-radius:4px;color:var(--text)">&lt; H₂O (V = 500 mL)</code></td></tr>
+          <tr><td style="padding:6px 10px 6px 0;white-space:nowrap;color:var(--accent);vertical-align:top">split</td><td style="padding:6px 0;color:var(--text-secondary-strong);vertical-align:top">Membuat <b>percabangan</b>. Di bawahnya diberi beberapa blok <code style="font-family:monospace;background:var(--code-bg);padding:1px 5px;border-radius:4px;color:var(--text)">branch</code> (menjorok ke dalam).</td></tr>
+        </table>
+
+        <p style="font-size:14px;color:var(--text-secondary);line-height:1.6"><b style="color:var(--text)">Percabangan</b> ditulis dengan <code style="font-family:monospace;background:var(--code-bg);padding:1px 5px;border-radius:4px;color:var(--text)">split</code> lalu tiap cabang diawali <code style="font-family:monospace;background:var(--code-bg);padding:1px 5px;border-radius:4px;color:var(--text)">branch</code> dan isinya menjorok masuk (indentasi 2 spasi tiap level):</p>
+
+        <pre style="background:var(--code-bg);color:var(--text);padding:14px 16px;border-radius:10px;font-family:monospace;font-size:12.5px;line-height:1.6;overflow:auto;border:1px solid var(--border)">[Filtrat]
+split
+  branch
+    [Supernatan]
+    - Pengukuran absorbansi
+    [Hasil]
+  branch
+    [Endapan]</pre>
+
+        <p style="font-size:14px;color:var(--text-secondary);line-height:1.6">Untuk memaksa <b style="color:var(--text)">ganti baris</b> di dalam kotak atau perlakuan yang panjang, sisipkan <code style="font-family:monospace;background:var(--code-bg);padding:1px 5px;border-radius:4px;color:var(--text)">\n</code> (garis miring + n). Simbol seperti <code style="font-family:monospace;background:var(--code-bg);padding:1px 5px;border-radius:4px;color:var(--text)">₂ ₃ ² λ °</code> boleh diketik langsung.</p>
+
+        <h2 style="margin:20px 0 4px;font-size:18px;font-weight:600;color:var(--text)">Format teks</h2>
+        <p style="font-size:14px;color:var(--text-secondary);line-height:1.6">Bisa diketik langsung atau lewat tombol <b style="color:var(--text)">B / I / U / X₂ / X²</b> di atas editor. Teks dasar tetap normal (tidak tebal).</p>
+
+        <table style="width:100%;border-collapse:collapse;font-size:13px;margin:8px 0">
+          <tr><td style="padding:6px 10px 6px 0;border-bottom:1px solid var(--border);white-space:nowrap;color:var(--accent);vertical-align:top">**teks**</td><td style="padding:6px 0;border-bottom:1px solid var(--border);color:var(--text-secondary-strong)"><b>Tebal</b></td></tr>
+          <tr><td style="padding:6px 10px 6px 0;border-bottom:1px solid var(--border);white-space:nowrap;color:var(--accent);vertical-align:top">*teks*</td><td style="padding:6px 0;border-bottom:1px solid var(--border);color:var(--text-secondary-strong)"><i>Miring</i></td></tr>
+          <tr><td style="padding:6px 10px 6px 0;border-bottom:1px solid var(--border);white-space:nowrap;color:var(--accent);vertical-align:top">__teks__</td><td style="padding:6px 0;border-bottom:1px solid var(--border);color:var(--text-secondary-strong)"><u>Garis bawah</u> (dua garis bawah)</td></tr>
+          <tr><td style="padding:6px 10px 6px 0;border-bottom:1px solid var(--border);white-space:nowrap;color:var(--accent);vertical-align:top">~teks~</td><td style="padding:6px 0;border-bottom:1px solid var(--border);color:var(--text-secondary-strong)">Subskrip — mis. <code style="font-family:monospace;background:var(--code-bg);padding:1px 5px;border-radius:4px;color:var(--text)">H~2~O</code>, <code style="font-family:monospace;background:var(--code-bg);padding:1px 5px;border-radius:4px;color:var(--text)">Fe~2~O~3~</code></td></tr>
+          <tr><td style="padding:6px 10px 6px 0;white-space:nowrap;color:var(--accent);vertical-align:top">^teks^</td><td style="padding:6px 0;color:var(--text-secondary-strong)">Superskrip — mis. <code style="font-family:monospace;background:var(--code-bg);padding:1px 5px;border-radius:4px;color:var(--text)">cm^2^</code>, <code style="font-family:monospace;background:var(--code-bg);padding:1px 5px;border-radius:4px;color:var(--text)">Cu^2+^</code></td></tr>
+        </table>
+
+        <p style="color:var(--text-tertiary);font-size:13px;line-height:1.6">Untuk menampilkan simbol markup secara literal, awali dengan <code style="font-family:monospace;background:var(--code-bg);padding:1px 5px;border-radius:4px;color:var(--text)">\</code> (mis. <code style="font-family:monospace;background:var(--code-bg);padding:1px 5px;border-radius:4px;color:var(--text)">\*</code> menghasilkan tanda bintang biasa).</p>
+        <p style="color:var(--text-tertiary);font-size:13px;line-height:1.6">Preview diperbarui otomatis. Kesalahan sintaks ditampilkan di bawah editor beserta nomor barisnya.</p>
+      </div>
+    </div>
+  </sc-if>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{
+  &quot;density&quot;: {&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;comfortable&quot;,&quot;options&quot;:[&quot;compact&quot;,&quot;comfortable&quot;,&quot;spacious&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Feel&quot;},
+  &quot;canvasPattern&quot;: {&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;dots&quot;,&quot;options&quot;:[&quot;dots&quot;,&quot;grid&quot;,&quot;blueprint&quot;,&quot;plain&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Feel&quot;},
+  &quot;accent&quot;: {&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#4F8CFF&quot;,&quot;options&quot;:[&quot;#4F8CFF&quot;,&quot;#8B5CF6&quot;,&quot;#22C55E&quot;,&quot;#F59E0B&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Feel&quot;}
+}">
+/* ===== Ported diagram DSL parser / measurer / renderer (unchanged geometry logic) ===== */
+const BOX_H=34, BOX_PAD_X=14, BOX_MIN_W=64;
+const FS_BOX=13, FS_STEP=12.5, LINE_H=16;
+const TICK=18, TICK_GAP=6;
+const EDGE_TOP=15, EDGE_BOT=15, STEP_VGAP=11, MIN_EDGE=30;
+const SPLIT_STUB=18, BRANCH_GAP=42, ARROW=8, MARGIN=30;
+const STROKE="#16181d", SW=1.25;
+let FONT="Arial, Helvetica, sans-serif";
+
+const THEMES = {
+  dark: {
+    bg:'#0F172A', headerBg:'#141B2E', panelBg:'#131A2B', canvasBg:'#111827',
+    border:'rgba(255,255,255,0.08)', borderSoft:'rgba(255,255,255,0.1)',
+    text:'#F8FAFC', textSecondary:'#94A3B8', textSecondaryStrong:'#CBD5E1', textTertiary:'#64748B',
+    hoverBg:'rgba(255,255,255,0.06)', hoverBgStrong:'rgba(255,255,255,0.08)', hoverBorder:'rgba(255,255,255,0.18)',
+    inputBg:'#1A2338', codeBg:'#0B1220', gridDot:'rgba(255,255,255,0.07)',
+    overlay:'rgba(2,6,23,0.65)', shadow:'rgba(0,0,0,0.4)',
+    dangerBg:'rgba(239,68,68,0.1)', dangerBorder:'rgba(239,68,68,0.25)', dangerText:'#FCA5A5'
+  },
+  light: {
+    bg:'#EEF1F6', headerBg:'#FFFFFF', panelBg:'#FFFFFF', canvasBg:'#F7F9FC',
+    border:'rgba(15,23,42,0.08)', borderSoft:'rgba(15,23,42,0.12)',
+    text:'#0F172A', textSecondary:'#475569', textSecondaryStrong:'#334155', textTertiary:'#64748B',
+    hoverBg:'rgba(15,23,42,0.04)', hoverBgStrong:'rgba(15,23,42,0.06)', hoverBorder:'rgba(15,23,42,0.16)',
+    inputBg:'#F1F5F9', codeBg:'#EEF2F7', gridDot:'rgba(15,23,42,0.09)',
+    overlay:'rgba(15,23,42,0.4)', shadow:'rgba(15,23,42,0.16)',
+    dangerBg:'rgba(239,68,68,0.08)', dangerBorder:'rgba(239,68,68,0.25)', dangerText:'#DC2626'
+  }
+};
+
+const DENSITY = {
+  compact:     { headerPad:'6px 16px',  headerGap:'8px',  panelPad:'8px 14px',  toolbarPad:'4px 10px',  editorPad:'10px 14px', canvasPad:'28px' },
+  comfortable: { headerPad:'10px 24px', headerGap:'12px', panelPad:'12px 16px', toolbarPad:'8px 14px',  editorPad:'16px 20px', canvasPad:'56px' },
+  spacious:    { headerPad:'18px 36px', headerGap:'18px', panelPad:'18px 22px', toolbarPad:'12px 18px', editorPad:'26px 30px', canvasPad:'88px' }
+};
+const ACCENT_HOVER = { '#4F8CFF':'#3D7AE0', '#8B5CF6':'#7C3AED', '#22C55E':'#16A34A', '#F59E0B':'#D97706' };
+function hexToRgba(hex,a){
+  const h=hex.replace('#',''); const r=parseInt(h.substring(0,2),16), g=parseInt(h.substring(2,4),16), b=parseInt(h.substring(4,6),16);
+  return `rgba(${r},${g},${b},${a})`;
+}
+function patternVars(pattern, theme){
+  const dot = theme==='dark' ? 'rgba(255,255,255,0.07)' : 'rgba(15,23,42,0.09)';
+  const lineC = theme==='dark' ? 'rgba(255,255,255,0.05)' : 'rgba(15,23,42,0.06)';
+  const blueC = theme==='dark' ? 'rgba(79,140,255,0.12)' : 'rgba(79,140,255,0.14)';
+  if(pattern==='grid') return { image:`linear-gradient(${lineC} 1px, transparent 1px), linear-gradient(90deg, ${lineC} 1px, transparent 1px)`, size:'24px 24px' };
+  if(pattern==='blueprint') return { image:`linear-gradient(${blueC} 1px, transparent 1px), linear-gradient(90deg, ${blueC} 1px, transparent 1px)`, size:'40px 40px' };
+  if(pattern==='plain') return { image:'none', size:'auto' };
+  return { image:`radial-gradient(${dot} 1px, transparent 1px)`, size:'24px 24px' };
+}
+
+const _cv=document.createElement('canvas'); const _ctx=_cv.getContext('2d');
+function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function unesc(s){ return s.replace(/\\n/g,'\n'); }
+
+function parseRuns(text){
+  const runs=[]; let bold=false,ital=false,und=false,sub=false,sup=false,buf='';
+  const push=()=>{ if(buf!==''){runs.push({t:buf,bold,ital,und,sub,sup}); buf='';} };
+  for(let i=0;i<text.length;i++){
+    const c=text[i], c2=text[i+1];
+    if(c==='\\'&&c2){ buf+=c2; i++; continue; }
+    if(c==='*'&&c2==='*'){ push(); bold=!bold; i++; continue; }
+    if(c==='_'&&c2==='_'){ push(); und=!und;  i++; continue; }
+    if(c==='*'){ push(); ital=!ital; continue; }
+    if(c==='~'){ push(); sub=!sub; if(sub)sup=false; continue; }
+    if(c==='^'){ push(); sup=!sup; if(sup)sub=false; continue; }
+    buf+=c;
+  }
+  push();
+  return runs.length?runs:[{t:'',bold:false,ital:false,und:false,sub:false,sup:false}];
+}
+function runFont(r,fs){ return {size:(r.sub||r.sup)?fs*0.72:fs, weight:r.bold?'bold':'normal', style:r.ital?'italic':'normal'}; }
+function twStyled(t,size,weight,style){ _ctx.font=(style!=='normal'?style+' ':'')+(weight!=='normal'?weight+' ':'')+size+'px '+FONT; return _ctx.measureText(t).width; }
+function runsWidth(runs,fs){ let w=0; for(const r of runs){ const f=runFont(r,fs); w+=twStyled(r.t,f.size,f.weight,f.style); } return w; }
+function lineW(text,fs){ return runsWidth(parseRuns(text),fs); }
+function emitLine(text,anchorX,baselineY,align,fs,color){
+  const runs=parseRuns(text);
+  let x = align==='middle' ? anchorX-runsWidth(runs,fs)/2 : anchorX;
+  for(const r of runs){
+    if(r.t===''){ continue; }
+    const f=runFont(r,fs), w=twStyled(r.t,f.size,f.weight,f.style);
+    let y=baselineY;
+    if(r.sub) y=baselineY+fs*0.18;
+    if(r.sup) y=baselineY-fs*0.34;
+    let a=`x="${x.toFixed(1)}" y="${y.toFixed(1)}" font-size="${f.size.toFixed(1)}"`;
+    if(f.weight!=='normal') a+=` font-weight="${f.weight}"`;
+    if(f.style!=='normal')  a+=` font-style="${f.style}"`;
+    E.push(`<text ${a} text-anchor="start" fill="${color}" stroke="none">${esc(r.t)}</text>`);
+    if(r.und) E.push(`<line x1="${x.toFixed(1)}" y1="${(y+2.2).toFixed(1)}" x2="${(x+w).toFixed(1)}" y2="${(y+2.2).toFixed(1)}" stroke="${color}" stroke-width="1"/>`);
+    x+=w;
+  }
+}
+
+function isBox(t){ return t.startsWith('[')&&t.endsWith(']'); }
+function isStep(t){ return t==='-'||t==='<'||t.startsWith('- ')||t.startsWith('< '); }
+function boxLabel(t){ return unesc(t.slice(1,-1).trim()); }
+function parseStep(t){
+  if(t[0]==='<') return {kind:'arrow', text:unesc(t.slice(1).trim())};
+  return {kind:'tick', text:unesc(t.replace(/^-\s?/,'').trim())};
+}
+function PErr(node,msg){ const e=new Error(msg); e.line=node&&node.line; return e; }
+
+function parse(src){
+  const lines=src.replace(/\t/g,'  ').split('\n');
+  const root={indent:-1,line:0,text:'__root__',children:[]};
+  const stack=[root];
+  lines.forEach((raw,i)=>{
+    if(!raw.trim()) return;
+    const indent=raw.length-raw.trimStart().length;
+    const node={indent,line:i+1,text:raw.trim(),children:[]};
+    while(stack.length>1 && stack[stack.length-1].indent>=indent) stack.pop();
+    stack[stack.length-1].children.push(node);
+    stack.push(node);
+  });
+  if(!root.children.length) throw PErr(root,'Diagram masih kosong.');
+  return interpretFlow(root.children);
+}
+
+function interpretFlow(blocks){
+  let first=null,last=null,pending=null;
+  for(let i=0;i<blocks.length;i++){
+    const b=blocks[i], t=b.text;
+    if(isBox(t)){
+      const box={type:'box',label:boxLabel(t),out:null};
+      if(!last){ first=box; }
+      else{ if(!pending){pending={type:'edge',steps:[],target:null};last.out=pending;} pending.target=box; }
+      last=box; pending=null;
+    } else if(isStep(t)){
+      if(!last) throw PErr(b,'Ada perlakuan sebelum kotak pertama.');
+      if(!pending){pending={type:'edge',steps:[],target:null};last.out=pending;}
+      pending.steps.push(parseStep(t));
+    } else if(t==='split'){
+      if(!last) throw PErr(b,"'split' harus berada di bawah sebuah kotak.");
+      if(!pending){pending={type:'edge',steps:[],target:null};last.out=pending;}
+      pending.target=makeSplit(b); pending=null; last=null;
+      if(i<blocks.length-1) throw PErr(blocks[i+1],"Tidak boleh ada baris lain setelah 'split' di level yang sama.");
+    } else if(t==='branch'){
+      throw PErr(b,"'branch' hanya boleh muncul di dalam 'split'.");
+    } else {
+      throw PErr(b,'Baris tidak dikenali. Gunakan [Kotak], "- perlakuan", "< reagen", atau "split".');
+    }
+  }
+  if(!first) throw PErr(blocks[0],'Diagram harus diawali sebuah [Kotak].');
+  return first;
+}
+function makeSplit(b){
+  const branches=[];
+  for(const ch of b.children){
+    if(ch.text!=='branch') throw PErr(ch,"Isi 'split' harus berupa blok 'branch'.");
+    branches.push(interpretBranch(ch.children,ch));
+  }
+  if(branches.length<2) throw PErr(b,"'split' butuh minimal 2 'branch'.");
+  return {type:'split',branches};
+}
+function interpretBranch(blocks,parent){
+  const edge={type:'edge',steps:[],target:null};
+  let i=0;
+  while(i<blocks.length && isStep(blocks[i].text)){ edge.steps.push(parseStep(blocks[i].text)); i++; }
+  if(i>=blocks.length) throw PErr(blocks[i-1]||parent,"'branch' harus berujung pada [Kotak] atau 'split'.");
+  const t=blocks[i].text;
+  if(isBox(t)){ edge.target=interpretFlow(blocks.slice(i)); }
+  else if(t==='split'){
+    if(i!==blocks.length-1) throw PErr(blocks[i+1],"Tidak boleh ada baris setelah 'split'.");
+    edge.target=makeSplit(blocks[i]);
+  } else { throw PErr(blocks[i],"'branch' harus berujung pada [Kotak] atau 'split'."); }
+  return edge;
+}
+
+function measureBox(box){
+  const lines=box.label.split('\n');
+  let w=0; for(const l of lines) w=Math.max(w,lineW(l,FS_BOX));
+  const bw=Math.max(BOX_MIN_W,w+2*BOX_PAD_X);
+  const bh=Math.max(BOX_H,lines.length*LINE_H+12);
+  if(!box.out){ return box._m={leftExt:bw/2,rightExt:bw/2,height:bh,bw,bh,lines}; }
+  const em=measureEdge(box.out);
+  return box._m={leftExt:Math.max(bw/2,em.leftExt),rightExt:Math.max(bw/2,em.rightExt),height:bh+em.height,bw,bh,lines};
+}
+function measureEdge(edge){
+  const stepH=[]; let contentH=0, stepRight=0;
+  for(const s of edge.steps){
+    const ls=s.text.split('\n'); const h=ls.length*LINE_H; stepH.push(h);
+    let wmax=0; for(const l of ls) wmax=Math.max(wmax,lineW(l,FS_STEP));
+    stepRight=Math.max(stepRight,TICK+TICK_GAP+wmax);
+  }
+  let edgeLen;
+  if(edge.steps.length){ contentH=stepH.reduce((a,b)=>a+b,0)+STEP_VGAP*(edge.steps.length-1); edgeLen=EDGE_TOP+contentH+EDGE_BOT; }
+  else edgeLen=MIN_EDGE;
+  const tm=edge.target?(edge.target.type==='box'?measureBox(edge.target):measureSplit(edge.target)):{leftExt:0,rightExt:0,height:0};
+  return edge._m={leftExt:tm.leftExt,rightExt:Math.max(stepRight,tm.rightExt),height:edgeLen+tm.height,edgeLen,stepH};
+}
+function measureSplit(split){
+  const bm=split.branches.map(measureEdge);
+  let cursor=0; const centers=[];
+  bm.forEach(m=>{ const cx=cursor+m.leftExt; centers.push(cx); cursor=cx+m.rightExt+BRANCH_GAP; });
+  const spine=(centers[0]+centers[centers.length-1])/2;
+  const maxH=Math.max(...bm.map(m=>m.height));
+  return split._m={
+    leftExt:spine, rightExt:(cursor-BRANCH_GAP)-spine,
+    height:SPLIT_STUB+maxH, relCenters:centers.map(c=>c-spine)
+  };
+}
+
+let E=[];
+function line(x1,y1,x2,y2){ E.push(`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}"/>`); }
+function rect(x,y,w,h){ E.push(`<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" fill="#fff"/>`); }
+function boxText(lines,cx,top,bh){
+  const startY=top+(bh-lines.length*LINE_H)/2+12;
+  lines.forEach((l,k)=>emitLine(l,cx,startY+k*LINE_H,'middle',FS_BOX,STROKE));
+}
+function stepText(lines,x,top){
+  const y0=top+12;
+  lines.forEach((l,k)=>emitLine(l,x,y0+k*LINE_H,'start',FS_STEP,STROKE));
+}
+function arrowHead(x,y){ E.push(`<path d="M${x} ${y} L${(x+ARROW).toFixed(1)} ${(y-ARROW/2).toFixed(1)} L${(x+ARROW).toFixed(1)} ${(y+ARROW/2).toFixed(1)} Z" fill="${STROKE}" stroke="none"/>`); }
+
+function placeBox(box,sx,ty){
+  const m=box._m;
+  rect(sx-m.bw/2,ty,m.bw,m.bh);
+  boxText(m.lines,sx,ty,m.bh);
+  if(box.out) placeEdge(box.out,sx,ty+m.bh);
+}
+function placeEdge(edge,sx,ty){
+  const m=edge._m;
+  line(sx,ty,sx,ty+m.edgeLen);
+  let cursor=ty+EDGE_TOP;
+  edge.steps.forEach((s,i)=>{
+    const ls=s.text.split('\n'); const h=m.stepH[i]; const midY=cursor+LINE_H/2;
+    line(sx,midY,sx+TICK,midY);
+    if(s.kind==='arrow') arrowHead(sx,midY);
+    stepText(ls,sx+TICK+TICK_GAP,cursor);
+    cursor+=h+STEP_VGAP;
+  });
+  const t=edge.target;
+  if(t){ if(t.type==='box') placeBox(t,sx,ty+m.edgeLen); else placeSplit(t,sx,ty+m.edgeLen); }
+}
+function placeSplit(split,sx,ty){
+  const m=split._m, barY=ty+SPLIT_STUB;
+  line(sx,ty,sx,barY);
+  const xs=m.relCenters.map(c=>sx+c);
+  line(xs[0],barY,xs[xs.length-1],barY);
+  split.branches.forEach((br,i)=>placeEdge(br,xs[i],barY));
+}
+
+function renderTree(tree){
+  E=[];
+  const m=(tree.type==='box')?measureBox(tree):measureSplit(tree);
+  const sx=MARGIN+m.leftExt, ty=MARGIN;
+  if(tree.type==='box') placeBox(tree,sx,ty); else placeSplit(tree,sx,ty);
+  const W=m.leftExt+m.rightExt+2*MARGIN, H=m.height+2*MARGIN;
+  return {W,H,body:E.join('')};
+}
+
+const EXAMPLES={
+preparasi:
+`[Sampel]
+- Pencucian
+- Pengeringan (T = ruang, t = 3 hari)
+- Penghalusan
+[Serbuk sampel]
+- Penimbangan (m = 50 g)
+< Pelarut (V = 500 mL, T = 60 °C, t = 30 menit)
+- Penyaringan
+split
+  branch
+    [Filtrat]
+    - Pemanasan
+    [Ekstrak]
+  branch
+    [Residu]`,
+
+kalibrasi:
+`[Larutan induk 100 ppm]
+- Pengenceran (5; 10; 15; 20; dan 25 ppm)
+- Scanning larutan standar (λ = 200 - 600 nm)
+[λ maksimum]`,
+
+kondisi:
+`[Larutan uji (V = 100 mL)]
+split
+  branch
+    < Katalis M~x~O~y~\\n(m = 0,1 g)
+    - Pengadukan dalam **gelap**\\n(t = 150 menit)
+    - Pengambilan cuplikan\\n(t = 0, 30, 60, 90,\\n120, dan 150 menit)
+    - Sentrifugasi
+    split
+      branch
+        [Supernatan]
+        - Pengukuran absorbansi\\n(λ maks)
+        [Hasil]
+      branch
+        [Endapan]
+  branch
+    < Katalis M~x~O~y~\\n(m = 0,1 g)
+    - Pengadukan dalam **cahaya**\\n(t = 150 menit)
+    - Pengambilan cuplikan\\n(t = 0, 30, 60, 90,\\n120, dan 150 menit)
+    - Sentrifugasi
+    split
+      branch
+        [Supernatan]
+        - Pengukuran absorbansi\\n(λ maks)
+        [Hasil]
+      branch
+        [Endapan]`
+};
+
+/* ===== Component ===== */
+class Component extends DCLogic {
+  constructor(props){
+    super(props);
+    this.textareaRef = React.createRef();
+    this.stageRef = React.createRef();
+    this.lastSVG=''; this.lastW=0; this.lastH=0;
+    this.state = {
+      src: EXAMPLES.preparasi,
+      font: "Arial, Helvetica, sans-serif",
+      zoom: 1,
+      helpOpen: false,
+      error: '',
+      stat: '',
+      activeExample: 'preparasi',
+      theme: 'dark',
+      pngQuality: 'normal'
+    };
+  }
+
+  componentDidMount(){ this.buildDiagram(); }
+
+  buildDiagram(){
+    FONT = this.state.font;
+    try{
+      const tree = parse(this.state.src);
+      const {W,H,body} = renderTree(tree);
+      this.lastW=W; this.lastH=H;
+      this.lastSVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+W.toFixed(1)+' '+H.toFixed(1)+'" '
+        +'font-family="'+FONT+'" stroke="'+STROKE+'" stroke-width="'+SW+'" stroke-linecap="square">'
+        +'<rect x="0" y="0" width="'+W.toFixed(1)+'" height="'+H.toFixed(1)+'" fill="#fff" stroke="none"/>'
+        +body+'</svg>';
+      this.setState({error:'', stat: Math.round(W)+' × '+Math.round(H)+' px'}, ()=>this.paint());
+    }catch(e){
+      this.setState({error: (e.line?('Baris '+e.line+': '):'')+e.message, stat:'⚠ error'});
+    }
+  }
+
+  paint(){
+    const el = this.stageRef.current;
+    if(!el) return;
+    el.innerHTML = this.lastSVG || '';
+    const svg = el.querySelector('svg');
+    if(svg){
+      svg.setAttribute('width', Math.round(this.lastW*this.state.zoom));
+      svg.setAttribute('height', Math.round(this.lastH*this.state.zoom));
+      svg.style.display='block';
+      svg.style.borderRadius='4px';
+      svg.style.boxShadow='0 1px 0 rgba(0,0,0,0.25), 0 20px 50px rgba(0,0,0,0.45)';
+    }
+  }
+
+  handleSrcChange(e){ this.setState({src:e.target.value, activeExample:null}, ()=>this.buildDiagram()); }
+  handleFontChange(e){ this.setState({font:e.target.value}, ()=>this.buildDiagram()); }
+  loadExample(key){ this.setState({src:EXAMPLES[key], zoom:1, activeExample:key}, ()=>this.buildDiagram()); }
+
+  wrapSelection(pre,post){
+    const ta=this.textareaRef.current; if(!ta) return;
+    const s=ta.selectionStart, en=ta.selectionEnd, val=this.state.src, sel=val.slice(s,en);
+    const next = val.slice(0,s)+pre+sel+post+val.slice(en);
+    const caret = sel? s+pre.length+sel.length+post.length : s+pre.length;
+    this.setState({src:next}, ()=>{ this.buildDiagram(); ta.focus(); ta.setSelectionRange(caret,caret); });
+  }
+
+  handleTextareaKeyDown(e){
+    if(e.key==='Tab'){
+      e.preventDefault();
+      const ta=e.target; const s=ta.selectionStart, en=ta.selectionEnd; const val=this.state.src;
+      const next= val.slice(0,s)+'  '+val.slice(en);
+      this.setState({src:next}, ()=>{ this.buildDiagram(); ta.focus(); ta.setSelectionRange(s+2,s+2); });
+    }
+  }
+
+  zoomIn(){ this.setState(s=>({zoom:Math.min(3, s.zoom*1.2)}), ()=>this.paint()); }
+  zoomOut(){ this.setState(s=>({zoom:Math.max(.3, s.zoom/1.2)}), ()=>this.paint()); }
+  zoomReset(){ this.setState({zoom:1}, ()=>this.paint()); }
+
+  download(name,blob){ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1500); }
+  exportSVG(){ if(!this.lastSVG) return; this.download('diagram-alir.svg', new Blob([this.lastSVG],{type:'image/svg+xml'})); }
+  exportPNG(){
+    if(!this.lastSVG) return;
+    const scale = this.state.pngQuality==='hd' ? 6 : 3;
+    const img=new Image();
+    const url='data:image/svg+xml;base64,'+btoa(unescape(encodeURIComponent(this.lastSVG)));
+    const lastW=this.lastW, lastH=this.lastH, dl=(n,b)=>this.download(n,b);
+    img.onload=()=>{
+      const c=document.createElement('canvas'); c.width=lastW*scale; c.height=lastH*scale;
+      const cx=c.getContext('2d'); cx.fillStyle='#fff'; cx.fillRect(0,0,c.width,c.height);
+      cx.drawImage(img,0,0,c.width,c.height);
+      const suffix = this.state.pngQuality==='hd' ? '-hd' : '';
+      c.toBlob(b=>dl('diagram-alir'+suffix+'.png',b),'image/png');
+    };
+    img.src=url;
+  }
+
+  toggleHelp(open){ this.setState({helpOpen:open}); }
+  handleOverlayClick(e){ if(e.target===e.currentTarget) this.setState({helpOpen:false}); }
+  toggleTheme(){ this.setState(s=>({theme: s.theme==='dark' ? 'light' : 'dark'})); }
+  handlePngQualityChange(e){ this.setState({pngQuality:e.target.value}); }
+
+  renderVals(){
+    const t = THEMES[this.state.theme];
+    const density = DENSITY[this.props.density ?? 'comfortable'] ?? DENSITY.comfortable;
+    const accent = this.props.accent ?? '#4F8CFF';
+    const accentHover = ACCENT_HOVER[accent] ?? accent;
+    const pat = patternVars(this.props.canvasPattern ?? 'dots', this.state.theme);
+    const rootVarsStyle = `--bg:${t.bg};--header-bg:${t.headerBg};--panel-bg:${t.panelBg};--canvas-bg:${t.canvasBg};`
+      + `--border:${t.border};--border-soft:${t.borderSoft};--text:${t.text};--text-secondary:${t.textSecondary};`
+      + `--text-secondary-strong:${t.textSecondaryStrong};--text-tertiary:${t.textTertiary};--hover-bg:${t.hoverBg};`
+      + `--hover-bg-strong:${t.hoverBgStrong};--hover-border:${t.hoverBorder};--input-bg:${t.inputBg};--code-bg:${t.codeBg};`
+      + `--grid-dot:${t.gridDot};--overlay:${t.overlay};--shadow-color:${t.shadow};--danger-bg:${t.dangerBg};`
+      + `--danger-border:${t.dangerBorder};--danger-text:${t.dangerText};`
+      + `--accent:${accent};--accent-hover:${accentHover};--accent-shadow:${hexToRgba(accent,0.3)};`
+      + `--header-pad:${density.headerPad};--header-gap:${density.headerGap};--panel-pad:${density.panelPad};`
+      + `--toolbar-pad:${density.toolbarPad};--editor-pad:${density.editorPad};--canvas-pad:${density.canvasPad};`
+      + `--canvas-bg-image:${pat.image};--canvas-bg-size:${pat.size};`;
+    return {
+      rootVarsStyle,
+      themeIcon: this.state.theme==='dark' ? '☀' : '☾',
+      src: this.state.src,
+      font: this.state.font,
+      zoomPct: Math.round(this.state.zoom*100)+'%',
+      error: this.state.error,
+      hasError: !!this.state.error,
+      stat: this.state.stat,
+      helpOpen: this.state.helpOpen,
+      textareaRef: this.textareaRef,
+      stageRef: this.stageRef,
+      onSrcChange: (e)=>this.handleSrcChange(e),
+      onFontChange: (e)=>this.handleFontChange(e),
+      onTextareaKeyDown: (e)=>this.handleTextareaKeyDown(e),
+      boldWrap: ()=>this.wrapSelection('**','**'),
+      italicWrap: ()=>this.wrapSelection('*','*'),
+      underlineWrap: ()=>this.wrapSelection('__','__'),
+      subWrap: ()=>this.wrapSelection('~','~'),
+      supWrap: ()=>this.wrapSelection('^','^'),
+      loadPreparasi: ()=>this.loadExample('preparasi'),
+      loadKalibrasi: ()=>this.loadExample('kalibrasi'),
+      loadKondisi: ()=>this.loadExample('kondisi'),
+      zoomIn: ()=>this.zoomIn(),
+      zoomOut: ()=>this.zoomOut(),
+      zoomReset: ()=>this.zoomReset(),
+      exportSVGClick: ()=>this.exportSVG(),
+      exportPNGClick: ()=>this.exportPNG(),
+      openHelp: ()=>this.toggleHelp(true),
+      closeHelp: ()=>this.toggleHelp(false),
+      overlayClick: (e)=>this.handleOverlayClick(e),
+      toggleTheme: ()=>this.toggleTheme(),
+      pngQuality: this.state.pngQuality,
+      onPngQualityChange: (e)=>this.handlePngQualityChange(e),
+    };
+  }
+}
+
+</script>
+</body>
+</html>
