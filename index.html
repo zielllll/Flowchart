@@ -2948,25 +2948,27 @@ function moveSegInd(){
   });
 }
 
-/* ---- dorong isi dasbor saat berpindah tampilan (All / Templates / Trash / folder) ---- */
+/* ---- ganti tampilan dasbor (All / Templates / Trash / folder): isinya muncul kembali ---- */
 function viewOrder(){ return ['all','tpl','trash'].concat(FOLDERS.all()); }
+function dashSections(){
+  return [...document.querySelectorAll('#scr-app .sec')].filter(e=>!e.hidden);
+}
 function switchView(v){
   if(v===VIEW) return;
   const main=document.querySelector('#scr-app .main');
-  const o=viewOrder(), dir=(o.indexOf(v)>o.indexOf(VIEW))?1:-1;
   QUERY=''; const q=$('q'); if(q) q.value='';
   if(RM()||!main){ VIEW=v; drawDash(); return; }
   stopAnims();
-  const out=main.animate([{transform:'translateX(0)'},{transform:'translateX('+(-dir*100)+'%)'}],
-    {duration:190,easing:'cubic-bezier(.4,0,1,1)'});
-  ANIMS.push(out);
-  let swapped=false;
-  const swap=()=>{ if(swapped) return; swapped=true;
-    VIEW=v; drawDash(); main.scrollTop=0;
-    ANIMS.push(main.animate([{transform:'translateX('+(dir*100)+'%)'},{transform:'translateX(0)'}],
-      {duration:250,easing:'cubic-bezier(0,0,.2,1)'}));
-  };
-  out.onfinish=swap; setTimeout(swap,230); guard(700);
+  /* Isi ditukar lebih dulu, lalu muncul kembali. Tidak ada fase keluar dan tidak ada
+     penundaan bertahap: keduanya butuh 'fill', dan animasi ber-fill yang terpotong
+     bisa meninggalkan bagian tak terlihat. Tanpa fill, pembatalan selalu kembali
+     ke keadaan normal yang terlihat.
+     Bilah atas dan sapaan sengaja diam - keduanya tidak berubah antar tampilan. */
+  VIEW=v; drawDash(); main.scrollTop=0;
+  dashSections().forEach(el=>ANIMS.push(el.animate(
+    [{opacity:0,transform:'translateY(12px) scale(.985)'},{opacity:1,transform:'none'}],
+    {duration:300,easing:'cubic-bezier(.2,.8,.3,1)'})));
+  guard(700);
 }
 
 /* ============================================================
