@@ -281,6 +281,12 @@ html[data-theme=dark] .card .thumb{background:#f7f4ec}
   text-transform:uppercase;color:var(--gray-1);transition:background var(--t),color var(--t)}
 .seg button.on{background:var(--ink);color:var(--paper)}
 .saved{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--gray-2)}
+.fontsel-wrap{display:inline-flex;align-items:center;height:32px;border:1px solid var(--hair);background:var(--field);padding:0 6px 0 10px;gap:6px;transition:border-color var(--t)}
+.fontsel-wrap:hover{border-color:var(--ink)}
+.fontsel-lbl{display:flex;align-items:center;gap:5px;font-family:var(--ui);font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--gray-1);user-select:none;cursor:pointer}
+.fontsel-icon{opacity:.75;flex:none}
+.fontsel{border:0;background:transparent;color:var(--ink);font-family:var(--ui);font-size:12px;font-weight:600;outline:none;cursor:pointer;padding-right:2px;height:100%}
+.fontsel option{background:var(--field);color:var(--ink);font-size:13px;padding:4px 8px}
 
 .ed-body{flex:1;display:flex;min-height:0}
 .rail{width:52px;flex:none;border-right:1px solid var(--rule);display:flex;flex-direction:column;
@@ -817,6 +823,28 @@ button[disabled]{opacity:.5;cursor:not-allowed}
     <input class="docname" id="docName" value="Untitled" spellcheck="false">
     <span class="saved" id="savedTxt">Saved</span>
     <div class="grow"></div>
+    <div class="fontsel-wrap" title="Diagram font">
+      <label for="fontSel" class="fontsel-lbl">
+        <svg class="fontsel-icon" width="13" height="13" viewBox="0 0 16 16" fill="currentColor">
+          <path d="M2.5 13h2.2l1.2-3.3h4.2l1.2 3.3h2.2L9.1 3H6.9L2.5 13zm4-5 1.5-4.2h.1L9.6 8H6.5z"/>
+        </svg>
+        <span>Font</span>
+      </label>
+      <select id="fontSel" class="fontsel" aria-label="Diagram font">
+        <option value="Arial" style="font-family:Arial, sans-serif">Arial</option>
+        <option value="Calibri" style="font-family:Calibri, sans-serif">Calibri</option>
+        <option value="Times New Roman" style="font-family:'Times New Roman', serif">Times New Roman</option>
+        <option value="Georgia" style="font-family:Georgia, serif">Georgia</option>
+        <option value="Verdana" style="font-family:Verdana, sans-serif">Verdana</option>
+        <option value="Trebuchet MS" style="font-family:'Trebuchet MS', sans-serif">Trebuchet MS</option>
+        <option value="Segoe UI" style="font-family:'Segoe UI', sans-serif">Segoe UI</option>
+        <option value="Garamond" style="font-family:Garamond, serif">Garamond</option>
+        <option value="Courier New" style="font-family:'Courier New', monospace">Courier New</option>
+        <option value="JetBrains Mono" style="font-family:'JetBrains Mono', monospace">JetBrains Mono</option>
+        <option value="Impact" style="font-family:Impact, sans-serif">Impact</option>
+        <option value="Comic Sans MS" style="font-family:'Comic Sans MS', cursive">Comic Sans MS</option>
+      </select>
+    </div>
     <div class="seg" id="modeSeg">
       <span class="segind"></span>
       <button data-m="visual">Visual</button><button data-m="source" class="on">Source</button>
@@ -1028,7 +1056,74 @@ const EDGE_TOP=15, EDGE_BOT=15, STEP_VGAP=11, MIN_EDGE=30;
 const SPLIT_STUB=18, BRANCH_GAP=42, ARROW=8, MARGIN=30;
 const STROKE="#111111", SW=1.3;
 const SUB_SC=.72, SUB_DY=.30, SUP_DY=-.40;   /* skala & pergeseran sub/superskrip */
-let FONT="Arial, Helvetica, sans-serif";
+
+/* ============================ Font diagram ============================ */
+const FONTS = {
+  'Arial': 'Arial, "Liberation Sans", "Helvetica Neue", Helvetica, sans-serif',
+  'Calibri': 'Calibri, Carlito, Candara, "Segoe UI", Arial, sans-serif',
+  'Times New Roman': "'Times New Roman', 'Liberation Serif', Times, Tinos, serif",
+  'Georgia': "Georgia, Gelasio, 'Nimbus Roman No9 L', serif",
+  'Verdana': "Verdana, Geneva, 'DejaVu Sans', sans-serif",
+  'Trebuchet MS': "'Trebuchet MS', 'Lucida Grande', 'Lucida Sans Unicode', sans-serif",
+  'Segoe UI': "'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', Arial, sans-serif",
+  'Garamond': "Garamond, 'EB Garamond', Baskerville, 'Times New Roman', serif",
+  'Courier New': "'Courier New', 'Liberation Mono', Courier, monospace",
+  'JetBrains Mono': "'JetBrains Mono', Consolas, 'Liberation Mono', Menlo, monospace",
+  'Impact': "Impact, Haettenschweiler, 'Arial Black', sans-serif",
+  'Comic Sans MS': "'Comic Sans MS', 'Comic Neue', cursive, sans-serif"
+};
+const FONT_ALIASES = {
+  'arial': 'Arial',
+  'calibri': 'Calibri',
+  'times new roman': 'Times New Roman',
+  'times': 'Times New Roman',
+  'times-new-roman': 'Times New Roman',
+  'georgia': 'Georgia',
+  'verdana': 'Verdana',
+  'trebuchet ms': 'Trebuchet MS',
+  'trebuchet': 'Trebuchet MS',
+  'segoe ui': 'Segoe UI',
+  'segoe': 'Segoe UI',
+  'garamond': 'Garamond',
+  'courier new': 'Courier New',
+  'courier': 'Courier New',
+  'jetbrains mono': 'JetBrains Mono',
+  'jetbrains': 'JetBrains Mono',
+  'comic sans ms': 'Comic Sans MS',
+  'comic sans': 'Comic Sans MS',
+  'impact': 'Impact',
+  'helvetica': 'Arial',
+  'mono': 'JetBrains Mono',
+  'monospace': 'Courier New',
+  'serif': 'Times New Roman',
+  'sans': 'Arial',
+  'sans-serif': 'Arial'
+};
+function normalizeFontName(name){
+  if(!name) return 'Arial';
+  const clean = name.trim().toLowerCase().replace(/['"]/g,'');
+  if(FONT_ALIASES[clean]) return FONT_ALIASES[clean];
+  for(const k in FONTS){
+    if(k.toLowerCase() === clean) return k;
+  }
+  return name.trim();
+}
+function resolveFont(name){
+  const norm = normalizeFontName(name);
+  if(FONTS[norm]) return FONTS[norm];
+  return name ? name.trim() : FONTS['Arial'];
+}
+function fontOf(src){
+  const m = /^\s*(?:font|font-family)\s*:\s*([^\n\r]+)/im.exec(src || '');
+  return m ? m[1].trim() : null;
+}
+function fontKeyOf(src){
+  const raw = fontOf(src);
+  if(raw) return normalizeFontName(raw);
+  return (CUR && CUR.font) ? normalizeFontName(CUR.font) : 'Arial';
+}
+function escAttr(s){ return String(s).replace(/"/g, '&quot;'); }
+let FONT = FONTS['Arial'];
 
 /* pengukur lebar teks */
 const _cv=document.createElement('canvas'); const _ctx=_cv.getContext('2d');
@@ -1099,7 +1194,7 @@ function parse(src){
   const stack=[root];
   lines.forEach((raw,i)=>{
     if(!raw.trim()) return;
-    if(/^\s*(mode|kolom|columns)\s*:/i.test(raw)) return;   /* baris pengaturan */
+    if(/^\s*(mode|kolom|columns|font|font-family)\s*:/i.test(raw)) return;   /* baris pengaturan */
     if(/^\s*\/\//.test(raw)) return;                        /* komentar */
     const indent=raw.length-raw.trimStart().length;
     const node={indent,line:i+1,text:raw.trim(),raw,children:[]};
@@ -1426,6 +1521,7 @@ function parseProses(src){
     if(!t) continue;
     if(/^mode\s*:/i.test(t)) continue;
     if(/^\/\//.test(t)) continue;
+    if(/^(font|font-family)\s*:/i.test(t)) continue;
     if(/^(kolom|columns)\s*:/i.test(t)){ kolom=parseInt(t.split(':')[1],10)||0; note=null; continue; }
     if(/^(catatan|note|notes)\s*:/i.test(t)){
       const j=t.slice(t.indexOf(':')+1).trim();
@@ -1554,17 +1650,21 @@ function modeOf(src){
   const v=m[1].toLowerCase();
   return /^proc|^pros/.test(v)?'proses':'alir';
 }
-function renderSrc(src){ return (modeOf(src)==='proses')?renderProses(src):render(parse(src)); }
+function renderSrc(src){
+  const fk=fontKeyOf(src);
+  FONT=resolveFont(fk);
+  return (modeOf(src)==='proses')?renderProses(src):render(parse(src));
+}
 /* dipakai untuk pratayang kecil: tidak boleh mengganggu peta sunting kanvas utama */
 function renderQuiet(src){
-  const e=EDITS,p=POS,l=LOOPS;
-  try{ return renderSrc(src); } finally{ EDITS=e; POS=p; LOOPS=l; }
+  const e=EDITS,p=POS,l=LOOPS,oldFont=FONT;
+  try{ return renderSrc(src); } finally{ EDITS=e; POS=p; LOOPS=l; FONT=oldFont; }
 }
 function svgOf(W,H,body,bg,bersih){
   const isi=bersih?body.replace(/ data-e="[0-9]+"/g,''):body;
   return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+W.toFixed(1)+' '+H.toFixed(1)+'"'
     +' width="'+W.toFixed(1)+'" height="'+H.toFixed(1)+'"'
-    +' font-family="'+FONT+'" stroke="'+STROKE+'" stroke-width="'+SW+'" stroke-linecap="square">'
+    +' font-family="'+escAttr(FONT)+'" stroke="'+STROKE+'" stroke-width="'+SW+'" stroke-linecap="square">'
     +(bg?'<rect x="0" y="0" width="'+W.toFixed(1)+'" height="'+H.toFixed(1)+'" fill="#fff" stroke="none"/>':'')
     +isi+'</svg>';
 }
@@ -1572,9 +1672,10 @@ function svgOf(W,H,body,bg,bersih){
 function thumbOf(src,maxW,maxH){
   try{
     const r=renderQuiet(src);
+    const f=resolveFont(fontKeyOf(src));
     return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+r.W.toFixed(1)+' '+r.H.toFixed(1)+'"'
       +' preserveAspectRatio="xMidYMid meet"'
-      +' font-family="'+FONT+'" stroke="'+STROKE+'" stroke-width="'+SW+'" stroke-linecap="square">'
+      +' font-family="'+escAttr(f)+'" stroke="'+STROKE+'" stroke-width="'+SW+'" stroke-linecap="square">'
       +r.body.replace(/ data-e="[0-9]+"/g,'')+'</svg>';
   }catch(e){
     return '<svg xmlns="http://www.w3.org/2000/svg" width="46" height="46" viewBox="0 0 46 46">'
