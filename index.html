@@ -1120,7 +1120,7 @@ function fontOf(src){
 function fontKeyOf(src){
   const raw = fontOf(src);
   if(raw) return normalizeFontName(raw);
-  return (CUR && CUR.font) ? normalizeFontName(CUR.font) : 'Arial';
+  return 'Arial';
 }
 function escAttr(s){ return String(s).replace(/"/g, '&quot;'); }
 let FONT = FONTS['Arial'];
@@ -2013,7 +2013,9 @@ let zoom=1, lastW=0, lastH=0, lastBody='', saveT=null, SEL=null;
 function openDoc(id){
   const d=DB.get(id);
   if(!d){ go('#/app'); return; }
-  CUR=d; srcEl.value=d.src||''; $('docName').value=d.name||'Untitled';
+  CUR=d; srcEl.value=d.src||'';
+  if(d.font&&!fontOf(srcEl.value)) srcEl.value='font: '+normalizeFontName(d.font)+'\n'+srcEl.value;
+  $('docName').value=d.name||'Untitled';
   zoom=1; SEL=null; hideProps(); build(); mark('Saved');
   if(typeof moveSegInd==='function') moveSegInd();
 }
@@ -2026,7 +2028,36 @@ function flush(){
 function autosave(){ clearTimeout(saveT); mark('Saving'); saveT=setTimeout(flush,650); }
 $('docName').addEventListener('input',autosave);
 
+function syncFontSelector(){
+  const select=$('fontSel'), name=fontKeyOf(srcEl.value);
+  select.querySelectorAll('[data-custom-font]').forEach(o=>o.remove());
+  if(!Array.from(select.options).some(o=>o.value===name)){
+    const option=document.createElement('option');
+    option.value=name; option.textContent=name; option.dataset.customFont='1';
+    select.appendChild(option);
+  }
+  select.value=name;
+}
+$('fontSel').addEventListener('change',()=>{
+  if(!CUR) return;
+  tutupSunting(true);
+  const name=$('fontSel').value;
+  // Store the choice in source so backups, cloud sync and thumbnails retain it.
+  const lines=srcEl.value.split('\n');
+  let found=false;
+  const updated=lines.filter(line=>{
+    if(!/^[ \t]*(?:font|font-family)[ \t]*:/i.test(line)) return true;
+    if(found) return false;
+    found=true; return true;
+  }).map(line=>/^[ \t]*(?:font|font-family)[ \t]*:/i.test(line)?'font: '+name:line);
+  if(!found) updated.unshift('font: '+name);
+  srcEl.value=updated.join('\n');
+  CUR.font=name;
+  hideProps(); build(); autosave();
+});
+
 function build(){
+  syncFontSelector();
   let r;
   try{ r=renderSrc(srcEl.value); }
   catch(e){ errEl.textContent=(e.line?('Line '+e.line+': '):'')+e.message; return; }
